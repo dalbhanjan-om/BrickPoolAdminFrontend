@@ -175,9 +175,11 @@ const OverviewLayout = () => {
 
         {/* City-wise Data Chart */}
         {cityData.cities.length > 0 && (
-          <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm border border-gray-200 overflow-x-auto">
+          <div 
+            className="bg-white rounded-lg p-4 sm:p-6 shadow-sm border border-gray-200 overflow-x-auto scroll-smooth touch-pan-x cursor-grab active:cursor-grabbing" 
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
             <div className="min-w-[600px]">
-              {/* Place your chart component here. If you use a chart library, ensure it fills the parent div. */}
               <BarChart
                 xAxis={[{ data: cityData.cities }]}
                 series={[
