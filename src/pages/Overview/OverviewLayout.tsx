@@ -73,19 +73,17 @@ const OverviewLayout = () => {
           totalPropertyInterests: totalPropertyRequirements
         })
 
-        // Fetch all buyers to get city data
-        const allBuyers = await overviewApiService.getAllBuyers()
-        console.log('All Buyers:', allBuyers)
-
         // Always include these cities
         const defaultCities = ["Pune", "Nagpur", "Mumbai", "Thane", "Nashik"];
+        // Fetch all buyers to get city data
+        const allBuyers = await overviewApiService.getAllBuyers()
         // Get unique cities from buyers data and merge with default cities
         const uniqueCities = Array.from(new Set([
           ...defaultCities,
-          ...allBuyers.map(buyer => buyer.cityName.trim())
-        ]));
+          ...allBuyers.map(buyer => buyer.cityName && typeof buyer.cityName === 'string' ? buyer.cityName.trim() : '')
+        ].filter(Boolean)));
 
-        // Fetch counts for each city
+        // Fetch counts for each city (even if zero)
         const cityCounts = await Promise.all(
           uniqueCities.map(async (city) => {
             const [buyerCount, brokerCount] = await Promise.all([
@@ -94,12 +92,15 @@ const OverviewLayout = () => {
             ])
             return {
               city,
-              buyerCount,
-              brokerCount,
-              propertyInterestCount: buyerCount + brokerCount // Using sum as proxy for property interests
+              buyerCount: buyerCount || 0,
+              brokerCount: brokerCount || 0,
+              propertyInterestCount: (buyerCount || 0) + (brokerCount || 0)
             }
           })
         );
+
+        // Sort cities alphabetically for consistent display
+        cityCounts.sort((a, b) => a.city.localeCompare(b.city));
 
         setCityData({
           cities: cityCounts.map(item => item.city),
@@ -174,61 +175,39 @@ const OverviewLayout = () => {
 
         {/* City-wise Data Chart */}
         {cityData.cities.length > 0 && (
-          <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm border border-gray-200">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
-              <div className="mb-3 sm:mb-0">
-                <h2 className="text-lg font-bold text-gray-900">City-wise Statistics</h2>
-                <p className="text-slate-600 text-sm">Performance across different cities</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                  <span className="text-xs font-medium text-gray-600">Buyers</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                  <span className="text-xs font-medium text-gray-600">Brokers</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-indigo-600 rounded-full"></div>
-                  <span className="text-xs font-medium text-gray-600">Property Interests</span>
-                </div>
-              </div>
-            </div>
-              
-            <div className="w-full overflow-x-auto">
-              <div className="min-w-[320px] sm:min-w-[400px] md:min-w-[500px] lg:min-w-[600px]">
-                <BarChart
-                  xAxis={[{ data: cityData.cities }]}
-                  series={[
-                    { 
-                      data: cityData.buyersCount, 
-                      label: 'Buyers',
-                      color: '#2563EB',
-                      stack: 'total'
-                    }, 
-                    { 
-                      data: cityData.brokerCount, 
-                      label: 'Brokers',
-                      color: '#10B981',
-                      stack: 'total'
-                    }, 
-                    { 
-                      data: cityData.propertyInterestCount, 
-                      label: 'Property Interests',
-                      color: '#7C3AED',
-                      stack: 'total'
-                    }
-                  ]}
-                  height={isMobile ? 280 : isTablet ? 320 : 400}
-                  margin={{ 
-                    left: isMobile ? 50 : 60, 
-                    right: isMobile ? 20 : 30, 
-                    top: 20, 
-                    bottom: isMobile ? 50 : 60 
-                  }}
-                />
-              </div>
+          <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm border border-gray-200 overflow-x-auto">
+            <div className="min-w-[600px]">
+              {/* Place your chart component here. If you use a chart library, ensure it fills the parent div. */}
+              <BarChart
+                xAxis={[{ data: cityData.cities }]}
+                series={[
+                  { 
+                    data: cityData.buyersCount, 
+                    label: 'Buyers',
+                    color: '#2563EB',
+                    stack: 'total'
+                  }, 
+                  { 
+                    data: cityData.brokerCount, 
+                    label: 'Brokers',
+                    color: '#10B981',
+                    stack: 'total'
+                  }, 
+                  { 
+                    data: cityData.propertyInterestCount, 
+                    label: 'Property Interests',
+                    color: '#7C3AED',
+                    stack: 'total'
+                  }
+                ]}
+                height={isMobile ? 280 : isTablet ? 320 : 400}
+                margin={{ 
+                  left: isMobile ? 50 : 60, 
+                  right: isMobile ? 20 : 30, 
+                  top: 20, 
+                  bottom: isMobile ? 50 : 60 
+                }}
+              />
             </div>
           </div>
         )}
