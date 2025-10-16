@@ -75,10 +75,16 @@ const OverviewLayout = () => {
 
         // Fetch all buyers to get city data
         const allBuyers = await overviewApiService.getAllBuyers()
-        
-        // Get unique cities from buyers data
-        const uniqueCities = [...new Set(allBuyers.map(buyer => buyer.cityName))]
-        
+        console.log('All Buyers:', allBuyers)
+
+        // Always include these cities
+        const defaultCities = ["Pune", "Nagpur", "Mumbai", "Thane", "Nashik"];
+        // Get unique cities from buyers data and merge with default cities
+        const uniqueCities = Array.from(new Set([
+          ...defaultCities,
+          ...allBuyers.map(buyer => buyer.cityName.trim())
+        ]));
+
         // Fetch counts for each city
         const cityCounts = await Promise.all(
           uniqueCities.map(async (city) => {
@@ -93,14 +99,14 @@ const OverviewLayout = () => {
               propertyInterestCount: buyerCount + brokerCount // Using sum as proxy for property interests
             }
           })
-        )
+        );
 
         setCityData({
           cities: cityCounts.map(item => item.city),
           buyersCount: cityCounts.map(item => item.buyerCount),
           brokerCount: cityCounts.map(item => item.brokerCount),
           propertyInterestCount: cityCounts.map(item => item.propertyInterestCount)
-        })
+        });
 
       } catch (err) {
         console.error('Error fetching overview data:', err)
