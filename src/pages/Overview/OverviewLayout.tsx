@@ -1,27 +1,105 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { BarChart } from '@mui/x-charts/BarChart'
 import overviewApiService from '../../services/OverviewApiService'
 
 interface CounterCardProps {
   title: string
   value: number
-  icon: string
-  iconBg: string
 }
 
-
-const CounterCard: React.FC<CounterCardProps> = ({ title, value, icon, iconBg }) => {
+const CounterCard: React.FC<CounterCardProps> = ({ title, value }) => {
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-lg hover:border-blue-200 transition-all duration-300">
-      <div className="flex items-center justify-between">
-        <div className={`w-14 h-14 ${iconBg} rounded-xl flex items-center justify-center shadow-sm`}>
-          <span className="text-xl">{icon}</span>
-        </div>
-        <div className="text-right">
-          <p className="text-slate-500 text-xs font-medium uppercase tracking-wider mb-1">{title}</p>
-          <p className="text-3xl font-semibold text-slate-800">{value.toLocaleString()}</p>
-        </div>
-      </div>
+    <div className="bg-white rounded-lg p-3 shadow-sm border border-slate-200 hover:shadow-md transition-all duration-200">
+      <p className="text-slate-500 text-xs font-medium mb-1 truncate">{title}</p>
+      <p className="text-xl sm:text-2xl font-semibold text-slate-800">{value.toLocaleString()}</p>
+    </div>
+  )
+}
+
+// Small helper to enable click-drag, wheel-to-horizontal, and touch-drag scrolling
+const ChartScroller: React.FC<{ minWidth: number; children: React.ReactNode }> = ({ minWidth, children }) => {
+  const scrollerRef = useRef<HTMLDivElement | null>(null)
+  const isDownRef = useRef(false)
+  const startXRef = useRef(0)
+  const startScrollRef = useRef(0)
+
+  useEffect(() => {
+    const onUp = () => {
+      isDownRef.current = false
+      if (scrollerRef.current) scrollerRef.current.style.cursor = 'grab'
+    }
+    window.addEventListener('mouseup', onUp)
+    return () => window.removeEventListener('mouseup', onUp)
+  }, [])
+
+  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    isDownRef.current = true
+    const scroller = scrollerRef.current
+    if (!scroller) return
+    startXRef.current = e.pageX - scroller.offsetLeft
+    startScrollRef.current = scroller.scrollLeft
+    scroller.style.cursor = 'grabbing'
+  }
+
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const scroller = scrollerRef.current
+    if (!isDownRef.current || !scroller) return
+    e.preventDefault()
+    const x = e.pageX - scroller.offsetLeft
+    const walk = (x - startXRef.current)
+    scroller.scrollLeft = startScrollRef.current - walk
+  }
+
+  const onMouseUpOrLeave = () => {
+    isDownRef.current = false
+    if (scrollerRef.current) scrollerRef.current.style.cursor = 'grab'
+  }
+
+  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const scroller = scrollerRef.current
+    if (!scroller) return
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      e.preventDefault()
+      scroller.scrollLeft += e.deltaY
+    }
+  }
+
+  const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    isDownRef.current = true
+    const scroller = scrollerRef.current
+    if (!scroller) return
+    startXRef.current = e.touches[0].pageX - scroller.offsetLeft
+    startScrollRef.current = scroller.scrollLeft
+  }
+
+  const onTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    const scroller = scrollerRef.current
+    if (!isDownRef.current || !scroller) return
+    const x = e.touches[0].pageX - scroller.offsetLeft
+    const walk = (x - startXRef.current)
+    scroller.scrollLeft = startScrollRef.current - walk
+  }
+
+  const onTouchEnd = () => {
+    isDownRef.current = false
+  }
+
+  return (
+    <div
+      ref={scrollerRef}
+      className="overflow-x-auto"
+      onWheel={onWheel}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseUpOrLeave}
+      onMouseUp={onMouseUpOrLeave}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchEnd}
+      style={{ WebkitOverflowScrolling: 'touch', cursor: 'grab', overscrollBehaviorX: 'contain', touchAction: 'pan-x' }}
+    >
+      <div style={{ minWidth }}>{children}</div>
     </div>
   )
 }
@@ -150,67 +228,102 @@ const OverviewLayout = () => {
 
   return (
     <div className="h-full bg-white">
-      <div className="p-6 h-full">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="p-4 sm:p-6 h-full">
+        {/* Stats Cards - Always in single row */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
           <CounterCard 
-            title="Total Buyers" 
-            value={stats.totalBuyers} 
-            icon="👥"
-            iconBg="bg-blue-600"
+            title="Buyers" 
+            value={stats.totalBuyers}
           />
           <CounterCard 
-            title="Total Brokers" 
-            value={stats.totalBrokers} 
-            icon="🏢"
-            iconBg="bg-emerald-500"
+            title="Brokers" 
+            value={stats.totalBrokers}
           />
           <CounterCard 
-            title="Property Interests" 
-            value={stats.totalPropertyInterests} 
-            icon="🏠"
-            iconBg="bg-indigo-600"
+            title="Interests" 
+            value={stats.totalPropertyInterests}
           />
         </div>
 
         {/* City-wise Data Chart */}
         {cityData.cities.length > 0 && (
-          <div 
-            className="bg-white rounded-lg p-4 sm:p-6 shadow-sm border border-gray-200 overflow-x-auto scroll-smooth touch-pan-x cursor-grab active:cursor-grabbing" 
-            style={{ WebkitOverflowScrolling: 'touch' }}
-          >
-            <div className="min-w-[600px]">
-              <BarChart
-                xAxis={[{ data: cityData.cities }]}
-                series={[
-                  { 
-                    data: cityData.buyersCount, 
-                    label: 'Buyers',
-                    color: '#2563EB',
-                    stack: 'total'
-                  }, 
-                  { 
-                    data: cityData.brokerCount, 
-                    label: 'Brokers',
-                    color: '#10B981',
-                    stack: 'total'
-                  }, 
-                  { 
-                    data: cityData.propertyInterestCount, 
-                    label: 'Property Interests',
-                    color: '#7C3AED',
-                    stack: 'total'
-                  }
-                ]}
-                height={isMobile ? 280 : isTablet ? 320 : 400}
-                margin={{ 
-                  left: isMobile ? 50 : 60, 
-                  right: isMobile ? 20 : 30, 
-                  top: 20, 
-                  bottom: isMobile ? 50 : 60 
-                }}
-              />
+          <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm border border-gray-200">
+            <div className="mb-3 sm:mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <h3 className="text-slate-800 text-base sm:text-lg font-semibold">City-wise Buyers, Brokers and Interests</h3>
+                </div>
+                <div className="flex items-center flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-700">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#2563EB' }} />
+                    Buyers
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-700">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#10B981' }} />
+                    Brokers
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-700">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#7C3AED' }} />
+                    Interests
+                  </span>
+                </div>
+              </div>
             </div>
+            {(() => {
+              // Abbreviate long labels on very small screens for readability
+              const displayCities = isMobile
+                ? cityData.cities.map((c) => (c.length > 10 ? `${c.slice(0, 10)}…` : c))
+                : cityData.cities
+
+              const perCategory = isMobile ? 110 : 80
+              const calculated = cityData.cities.length * perCategory
+              const minWidth = Math.max(calculated, isMobile ? 900 : 800)
+              return (
+                <ChartScroller minWidth={minWidth}>
+                  <BarChart
+                    xAxis={[{ 
+                      data: displayCities,
+                      scaleType: 'band',
+                      tickLabelStyle: {
+                        angle: isMobile ? -82 : isTablet ? -50 : 0,
+                        textAnchor: isMobile || isTablet ? 'end' : 'middle',
+                        dominantBaseline: 'hanging',
+                        fontSize: isMobile ? 8 : isTablet ? 10 : 12,
+                        whiteSpace: 'nowrap'
+                      }
+                    }]}
+                    series={[
+                      { 
+                        data: cityData.buyersCount, 
+                        label: 'Buyers',
+                        color: '#2563EB',
+                        stack: 'total'
+                      }, 
+                      { 
+                        data: cityData.brokerCount, 
+                        label: 'Brokers',
+                        color: '#10B981',
+                        stack: 'total'
+                      }, 
+                      { 
+                        data: cityData.propertyInterestCount, 
+                        label: 'Property Interests',
+                        color: '#7C3AED',
+                        stack: 'total'
+                      }
+                    ]}
+                    width={minWidth}
+                    height={isMobile ? 300 : isTablet ? 340 : 380}
+                    margin={{ 
+                      left: isMobile ? 48 : 50, 
+                      right: isMobile ? 16 : 20, 
+                      top: isMobile ? 28 : 60, 
+                      bottom: isMobile ? 120 : isTablet ? 110 : 90 
+                    }}
+                  />
+                </ChartScroller>
+              )
+            })()}
           </div>
         )}
       </div>

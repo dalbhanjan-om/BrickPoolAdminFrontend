@@ -1,73 +1,76 @@
-
 import React from 'react';
 
-type Buyer = {
+type Property = {
   id: string;
-  name: string;
-  city: string;
+  propertyType: string;
+  location: string; // city
+  price: number; // INR assumed
 };
 
-const mockBuyers: Buyer[] = [
-  { id: 'u1', name: 'Sanjana Iyer', city: 'Pune' },
-  { id: 'u2', name: 'Vikram Nair', city: 'Mumbai' },
-  { id: 'u3', name: 'Meera Chavan', city: 'Nashik' },
-  { id: 'u4', name: 'Arjun Pawar', city: 'Pune' },
-  { id: 'u5', name: 'Divya Shah', city: 'Thane' },
-  { id: 'u6', name: 'Ankit Goyal', city: 'Nagpur' },
-  { id: 'u7', name: 'Ritika Jain', city: 'Mumbai' },
-  { id: 'u8', name: 'Manav Khanna', city: 'Thane' },
+const mockProperties: Property[] = [
+  { id: 'p1', propertyType: 'Apartment', location: 'Pune', price: 8500000 },
+  { id: 'p2', propertyType: 'Villa', location: 'Mumbai', price: 24500000 },
+  { id: 'p3', propertyType: 'Plot', location: 'Nashik', price: 4200000 },
+  { id: 'p4', propertyType: 'Apartment', location: 'Pune', price: 9800000 },
+  { id: 'p5', propertyType: 'Office Space', location: 'Thane', price: 16500000 },
+  { id: 'p6', propertyType: 'Shop', location: 'Nagpur', price: 5600000 },
+  { id: 'p7', propertyType: 'Villa', location: 'Mumbai', price: 31500000 },
+  { id: 'p8', propertyType: 'Apartment', location: 'Thane', price: 10500000 },
 ];
 
-const BuyerCard: React.FC<Pick<Buyer, 'name' | 'city'>> = ({ name, city }) => {
+const formatINR = (value: number) =>
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value);
+
+const PropertyCard: React.FC<Pick<Property, 'propertyType' | 'location' | 'price'>> = ({ propertyType, location, price }) => {
   return (
     <div className="rounded-lg border border-[#003366]/15 bg-white transition-colors duration-150 hover:border-[#003366]/30 focus-within:border-[#003366]/40">
       <div className="p-4">
-        <h3 className="text-[15px] sm:text-base font-semibold text-[#003366] leading-snug truncate" title={name}>{name}</h3>
-        <p className="mt-1.5 text-xs sm:text-sm text-[#003366]/75 truncate">{city}</p>
+        <h3 className="text-[15px] sm:text-base font-semibold text-[#003366] leading-snug truncate" title={propertyType}>{propertyType}</h3>
+        <p className="mt-1 text-xs sm:text-sm text-[#003366]/75 truncate">{location}</p>
+        <p className="mt-2 text-sm sm:text-[15px] font-medium text-[#003366]">{formatINR(price)}</p>
       </div>
     </div>
   );
 };
 
-const BuyerLayout: React.FC = () => {
+const PropertyInterest: React.FC = () => {
   const [selectedCity, setSelectedCity] = React.useState<string>('All');
   const [currentPage, setCurrentPage] = React.useState<number>(1);
-  const pageSize = 8; // grid-friendly page size
+  const pageSize = 8;
 
   const cities = React.useMemo(() => {
     return ['All', 'Pune', 'Nagpur', 'Mumbai', 'Nashik', 'Thane'];
   }, []);
 
-  const filteredBuyers = React.useMemo(() => {
-    const list = selectedCity === 'All' ? mockBuyers : mockBuyers.filter((b) => b.city === selectedCity);
+  const filteredProperties = React.useMemo(() => {
+    const list = selectedCity === 'All' ? mockProperties : mockProperties.filter((p) => p.location === selectedCity);
     return list;
   }, [selectedCity]);
 
   React.useEffect(() => {
-    // reset to first page when filters change
     setCurrentPage(1);
   }, [selectedCity]);
 
-  const totalItems = filteredBuyers.length;
+  const totalItems = filteredProperties.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const paginatedBuyers = React.useMemo(() => {
+  const paginatedProperties = React.useMemo(() => {
     const start = (currentPage - 1) * pageSize;
-    return filteredBuyers.slice(start, start + pageSize);
-  }, [filteredBuyers, currentPage]);
+    return filteredProperties.slice(start, start + pageSize);
+  }, [filteredProperties, currentPage]);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#003366]">Buyers</h1>
-          <p className="text-sm text-[#003366]/70">Browse buyers and filter by city</p>
+          <h1 className="text-2xl font-bold text-[#003366]">Property Interests</h1>
+          <p className="text-sm text-[#003366]/70">Browse properties and filter by city</p>
         </div>
       </div>
 
       <div className="sm:hidden">
-        <label htmlFor="buyer-city" className="sr-only">City</label>
+        <label htmlFor="property-city" className="sr-only">City</label>
         <select
-          id="buyer-city"
+          id="property-city"
           value={selectedCity}
           onChange={(e) => setSelectedCity(e.target.value)}
           className="w-full rounded-lg border border-[#003366]/30 bg-white px-3 py-2 text-sm text-[#003366] focus:outline-none focus:ring-2 focus:ring-[#003366]/40"
@@ -99,8 +102,8 @@ const BuyerLayout: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-        {paginatedBuyers.map((buyer) => (
-          <BuyerCard key={buyer.id} name={buyer.name} city={buyer.city} />
+        {paginatedProperties.map((prop) => (
+          <PropertyCard key={prop.id} propertyType={prop.propertyType} location={prop.location} price={prop.price} />
         ))}
       </div>
 
@@ -139,4 +142,4 @@ const BuyerLayout: React.FC = () => {
   );
 }
 
-export default BuyerLayout
+export default PropertyInterest

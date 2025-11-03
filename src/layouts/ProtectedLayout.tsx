@@ -8,6 +8,7 @@ import BrokerLayout from '../pages/Brokers/BrokerLayout';
 import PoolLayout from '../pages/Pools/PoolLayout';
 import OverviewLayout from '../pages/Overview/OverviewLayout';
 import ChangePassword from '../pages/Auth/changePassword';
+import PropertyInterest from '../pages/PropertyInterest/PropertyInterest';
 
 const MainContent: React.FC = () => {
   const { isSidebarOpen } = useSidebar();
@@ -22,6 +23,9 @@ const MainContent: React.FC = () => {
           <Route path="/buyers" element={<BuyerLayout />} />
           <Route path="/brokers" element={<BrokerLayout />} />
           <Route path="/pools" element={<PoolLayout />} />
+          <Route path="/property-interests" element={<PropertyInterest />} />
+
+
           <Route path="/overview" element={<OverviewLayout />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/" element={<Navigate to="/overview" replace />} />

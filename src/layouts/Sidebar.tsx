@@ -4,13 +4,14 @@ import React, { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useSidebar } from "./useSidebar";
 import logo from "../assets/logo.png";
-import { Users, Briefcase, Layers, Home } from "lucide-react";
+import { Users, Briefcase, Layers, Home, MapPinHouse } from "lucide-react";
 
 const navItems = [
-  { label: "Overview", icon: <Home className="w-5 h-5" /> },
-  { label: "Buyers", icon: <Users className="w-5 h-5" /> },
-  { label: "Brokers", icon: <Briefcase className="w-5 h-5" /> },
-  { label: "Pools", icon: <Layers className="w-5 h-5" /> },
+  { label: "Overview", icon: <Home className="w-5 h-5" />,route: "/overview" },
+  { label: "Buyers", icon: <Users className="w-5 h-5" />,route: "/buyers" },
+  { label: "Brokers", icon: <Briefcase className="w-5 h-5" />,route: "/brokers" },
+  { label: "Pools", icon: <Layers className="w-5 h-5" />,route: "/pools" },
+  { label: "Property Interests", icon: <MapPinHouse className="w-5 h-5" />,route: "/property-interests" },
 ];
 
 const Sidebar: React.FC = () => {
@@ -95,7 +96,7 @@ const Sidebar: React.FC = () => {
             }`}
           >
             {navItems.map((item) => {
-              const path = `/${item.label.toLowerCase()}`;
+              const path = item.route;
               const isActive = location.pathname === path;
               return (
                 <Link
